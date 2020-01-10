@@ -41,7 +41,7 @@
 %global with_valgrind_config_opt --with-valgrind
 %else
 %global with_valgrind 0
-%global with_valgrind_config_opt
+%global with_valgrind_config_opt %{nil}
 %endif
 
 # Turn this to 0 to turn off the "check" phase:
@@ -50,7 +50,7 @@
 Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 Version: 2.6.6
-Release: 66%{?dist}
+Release: 68%{?dist}
 License: Python
 Group: Development/Languages
 Provides: python-abi = %{pybasever}
@@ -548,8 +548,14 @@ Patch238: 00238-CVE-2016-5699-httplib.patch
 # https://httpoxy.org/
 # FIXED UPSTREAM: http://bugs.python.org/issue27568
 # Based on a patch by Rémi Rampin
-# Resolves: rhbz#1359161
+# Resolves: rhbz#1359162
 Patch242: 00242-CVE-2016-1000110-httpoxy.patch
+
+# 00320 #
+# Security fix for CVE-2019-9636 and CVE-2019-10160: Information Disclosure due to urlsplit improper NFKC normalization
+# FIXED UPSTREAM: https://bugs.python.org/issue36216 and https://bugs.python.org/issue36742
+# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1716744
+Patch320: 00320-CVE-2019-9636-and-CVE-2019-10160.patch
 
 # (New patches go here ^^^)
 #
@@ -939,6 +945,7 @@ mv Modules/cryptmodule.c Modules/_cryptmodule.c
 %patch237 -p1
 %patch238 -p1
 %patch242 -p1
+%patch320 -p1
 
 
 # Don't build these crypto algorithms; instead rely on _hashlib and OpenSSL:
@@ -1435,16 +1442,24 @@ rm -fr $RPM_BUILD_ROOT
 # payload file would be unpackaged)
 
 %changelog
+* Tue Jun 11 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.6.6-68
+- Security fix for CVE-2019-10160
+Resolves: rhbz#1716744
+
+* Wed Jun 05 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.6.6-67
+- Security fix for CVE-2019-9636
+Resolves: rhbz#1716744
+
 * Tue Aug 09 2016 Charalampos Stratakis <cstratak@redhat.com> - 2.6.6-66
 - Fix for CVE-2016-1000110 HTTPoxy attack
-Resolves: rhbz#1359161
+Resolves: rhbz#1359162
 
 * Tue Jun 21 2016 Tomas Orsava <torsava@redhat.com> - 2.6.6-65
 - Fix for CVE-2016-0772 python: smtplib StartTLS stripping attack (rhbz#1303647)
   Raise an error when STARTTLS fails (upstream patch)
 - Fix for CVE-2016-5699 python: http protocol steam injection attack (rhbz#1303699)
   Disabled HTTP header injections in httplib (upstream patch)
-Resolves: rhbz#1346354
+Resolves: rhbz#1346355
 
 * Fri May 22 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.6.6-64
 - Enable use of deepcopy() with instance methods

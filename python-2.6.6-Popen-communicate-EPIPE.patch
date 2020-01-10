@@ -1,6 +1,7 @@
-diff -up Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib/subprocess.py
---- Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE	2011-04-07 14:51:51.828628925 -0400
-+++ Python-2.6.6/Lib/subprocess.py	2011-04-07 14:58:07.524283828 -0400
+diff --git a/Lib/subprocess.py b/Lib/subprocess.py
+index 8743ef5..d32e2af 100644
+--- a/Lib/subprocess.py
++++ b/Lib/subprocess.py
 @@ -384,6 +384,7 @@ import types
  import traceback
  import gc
@@ -17,7 +18,7 @@ diff -up Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib
      import fcntl
      import pickle
  
-@@ -710,7 +710,11 @@ class Popen(object):
+@@ -713,7 +713,11 @@ class Popen(object):
              stderr = None
              if self.stdin:
                  if input:
@@ -30,7 +31,7 @@ diff -up Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib
                  self.stdin.close()
              elif self.stdout:
                  stdout = self.stdout.read()
-@@ -986,7 +990,11 @@ class Popen(object):
+@@ -992,7 +996,11 @@ class Popen(object):
  
              if self.stdin:
                  if input is not None:
@@ -43,7 +44,7 @@ diff -up Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib
                  self.stdin.close()
  
              # Wait for the reader threads, or time out.  If we timeout, the
-@@ -1378,9 +1386,16 @@ class Popen(object):
+@@ -1400,9 +1408,16 @@ class Popen(object):
                      if mode & select.POLLOUT:
                          chunk = self._input[self._input_offset :
                                              self._input_offset + _PIPE_BUF]
@@ -63,7 +64,7 @@ diff -up Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib
                      elif mode & select_POLLIN_POLLPRI:
                          data = os.read(fd, 4096)
                          if not data:
-@@ -1440,11 +1455,19 @@ class Popen(object):
+@@ -1462,11 +1477,19 @@ class Popen(object):
                  if self.stdin in wlist:
                      chunk = self._input[self._input_offset :
                                    self._input_offset + _PIPE_BUF]
@@ -88,10 +89,11 @@ diff -up Python-2.6.6/Lib/subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib
  
                  if self.stdout in rlist:
                      data = os.read(self.stdout.fileno(), 1024)
-diff -up Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE Python-2.6.6/Lib/test/test_subprocess.py
---- Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE	2011-04-07 14:51:51.837639236 -0400
-+++ Python-2.6.6/Lib/test/test_subprocess.py	2011-04-07 15:38:14.716640799 -0400
-@@ -532,6 +532,134 @@ class ProcessTestCase(unittest.TestCase)
+diff --git a/Lib/test/test_subprocess.py b/Lib/test/test_subprocess.py
+index c926831..7257fd6 100644
+--- a/Lib/test/test_subprocess.py
++++ b/Lib/test/test_subprocess.py
+@@ -532,6 +532,110 @@ class ProcessTestCase(unittest.TestCase):
          self.assertRaises(subprocess.TimeoutExpired, p.wait, timeout=0.1)
          self.assertEqual(p.wait(timeout=2), 0)
  
@@ -122,7 +124,7 @@ diff -up Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE Python
 +        # Further testing of issue 10963, invoking dd with args that cause it
 +        # to quickly fail, trying various combinations on arguments to the
 +        # subprocess API.
-+        # 
++        #
 +        # dd will emit these error messages to stdout:
 +        #     dd: unrecognized operand `option=bad'
 +        #     Try `dd --help' for more information.
@@ -144,7 +146,7 @@ diff -up Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE Python
 +            # quickly, with an error message on stderr:
 +            p = subprocess.Popen(['dd', "option=bad"],
 +                                 **kwargs)
-+            
++
 +            try:
 +                if sleep:
 +                    time.sleep(1)
@@ -165,7 +167,7 @@ diff -up Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE Python
 +                for capture_stderr in (False, True):
 +                    for with_timeout in (False, True):
 +                        _run_test(sleep,
-+                                  capture_stdout, capture_stderr, 
++                                  capture_stdout, capture_stderr,
 +                                  with_timeout)
 +
 +    def test_short_lived_subprocess(self):
@@ -179,18 +181,18 @@ diff -up Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE Python
 +
 +        # Verify for a "successful" subprocess:
 +
-+        p = subprocess.Popen([sys.executable, '-c', 
++        p = subprocess.Popen([sys.executable, '-c',
 +                              ('import sys;'
 +                               ' sys.stdout.write("stdout");'
 +                               ' sys.stderr.write("stderr");')],
 +                             close_fds=True,
-+                             stdin=subprocess.PIPE, 
++                             stdin=subprocess.PIPE,
 +                             stdout=subprocess.PIPE,
 +                             stderr=subprocess.PIPE)
 +        # Try to ensure that the subprocess is finished before attempting
 +        # communication:
 +        time.sleep(0.5)
-+        
++
 +        # Now begin trying to send bytes to stdin of the subprocess; typically
 +        # the subprocess will already have exited:
 +        out, err = p.communicate(b'\n')
@@ -199,30 +201,6 @@ diff -up Python-2.6.6/Lib/test/test_subprocess.py.Popen-communicate-EPIPE Python
 +        self.assertEqual(out, b'stdout')
 +        self.assertStderrEqual(err, b'stderr')
 +        self.assertEqual(p.returncode, 0)
-+
-+    def test_crashing_subprocess(self):
-+        # Verify that we detect an "unexpected" crash (using a bogus ctypes
-+        # call to induce a probable segmentation fault):
-+        p = subprocess.Popen([sys.executable, '-c',
-+                              'import ctypes; ctypes.string_at(0xffffffff)'],
-+                             close_fds=True,
-+                             stdin=subprocess.PIPE, 
-+                             stdout=subprocess.PIPE,
-+                             stderr=subprocess.PIPE)
-+
-+        # Try to ensure that the subprocess is finished before attempting
-+        # communication:
-+        time.sleep(0.5)
-+        
-+        # Now begin trying to send bytes to stdin of the subprocess; typically
-+        # the subprocess will already have crashed:
-+        out, err = p.communicate(b'\n')
-+
-+        # The SIGPIPE ought to be transparent to the user, and the return code
-+        # should indicate the SIGSEGV:
-+        self.assertEqual(out, b'')
-+        self.assertStderrEqual(err, b'')
-+        self.assertEqual(p.returncode, -signal.SIGSEGV)
  
      def test_invalid_bufsize(self):
          # an invalid type of the bufsize argument should raise

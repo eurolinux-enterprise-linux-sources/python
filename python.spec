@@ -50,7 +50,7 @@
 Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 Version: 2.6.6
-Release: 64%{?dist}
+Release: 66%{?dist}
 License: Python
 Group: Development/Languages
 Provides: python-abi = %{pybasever}
@@ -527,6 +527,51 @@ Patch184: CVE-2013-1752.patch
 # Resolves: rhbz#1223037
 Patch185: enable-deepcopy-with-instance-methods.patch
 
+# 00237 #
+# CVE-2016-0772 python: smtplib StartTLS stripping attack
+#   https://bugzilla.redhat.com/show_bug.cgi?id=1303647
+#   FIXED UPSTREAM: https://hg.python.org/cpython/rev/b3ce713fb9be
+# Raise an error when STARTTLS fails
+# Resolves: rhbz#1346354, rhbz#1346355
+Patch237: 00237-CVE-2016-0772-smtplib.patch
+
+# 00238 #
+# CVE-2016-5699 python: http protocol steam injection attack
+#   https://bugzilla.redhat.com/show_bug.cgi?id=1303699
+#   FIXED UPSTREAM: https://hg.python.org/cpython/rev/1c45047c5102
+# Disabled HTTP header injections in httplib
+# Resolves: rhbz#1346354, rhbz#1346355
+Patch238: 00238-CVE-2016-5699-httplib.patch
+
+# 00242 #
+# HTTPoxy attack (CVE-2016-1000110)
+# https://httpoxy.org/
+# FIXED UPSTREAM: http://bugs.python.org/issue27568
+# Based on a patch by Rémi Rampin
+# Resolves: rhbz#1359161
+Patch242: 00242-CVE-2016-1000110-httpoxy.patch
+
+# (New patches go here ^^^)
+#
+# When adding new patches to "python" and "python3" in Fedora 17 onwards,
+# please try to keep the patch numbers in-sync between the two specfiles:
+#
+#   - use the same patch number across both specfiles for conceptually-equivalent
+#     fixes, ideally with the same name
+#
+#   - when a patch is relevant to both specfiles, use the same introductory
+#     comment in both specfiles where possible (to improve "diff" output when
+#     comparing them)
+#
+#   - when a patch is only relevant for one of the two specfiles, leave a gap
+#     in the patch numbering in the other specfile, adding a comment when
+#     omitting a patch, both in the manifest section here, and in the "prep"
+#     phase below
+#
+# Hopefully this will make it easier to ensure that all relevant fixes are
+# applied to both versions.
+
+
 # The core python package contains just the executable and manpages; most of
 # the content is now in the -libs subpackage.
 # We require the correct multilib version of the -libs subpackage:
@@ -890,6 +935,11 @@ mv Modules/cryptmodule.c Modules/_cryptmodule.c
 %patch184 -p1
 
 %patch185 -p1
+
+%patch237 -p1
+%patch238 -p1
+%patch242 -p1
+
 
 # Don't build these crypto algorithms; instead rely on _hashlib and OpenSSL:
 for f in md5module.c md5.c shamodule.c sha256module.c sha512module.c; do
@@ -1385,6 +1435,17 @@ rm -fr $RPM_BUILD_ROOT
 # payload file would be unpackaged)
 
 %changelog
+* Tue Aug 09 2016 Charalampos Stratakis <cstratak@redhat.com> - 2.6.6-66
+- Fix for CVE-2016-1000110 HTTPoxy attack
+Resolves: rhbz#1359161
+
+* Tue Jun 21 2016 Tomas Orsava <torsava@redhat.com> - 2.6.6-65
+- Fix for CVE-2016-0772 python: smtplib StartTLS stripping attack (rhbz#1303647)
+  Raise an error when STARTTLS fails (upstream patch)
+- Fix for CVE-2016-5699 python: http protocol steam injection attack (rhbz#1303699)
+  Disabled HTTP header injections in httplib (upstream patch)
+Resolves: rhbz#1346354
+
 * Fri May 22 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.6.6-64
 - Enable use of deepcopy() with instance methods
 Resolves: rhbz#1223037

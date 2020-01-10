@@ -44,10 +44,13 @@
 %global with_valgrind_config_opt
 %endif
 
+# Turn this to 0 to turn off the "check" phase:
+%global run_selftest_suite 1
+
 Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 Version: 2.6.6
-Release: 52%{?dist}
+Release: 64%{?dist}
 License: Python
 Group: Development/Languages
 Provides: python-abi = %{pybasever}
@@ -90,6 +93,7 @@ Source5: pyfuntop.stp
 Source6: modulator
 Source7: pynche
 
+Source8: ordereddict-1.2-py2.6.egg-info
 
 Patch0: python-2.6.2-config.patch
 Patch1: Python-2.2.1-pydocnogui.patch
@@ -453,6 +457,75 @@ Patch171: python-2.6.6-CVE-2013-4238-hostname-check-bypass-in-SSL-module.patch
 # (rhbz#1002983)
 Patch172: python-2.6.6-ssl-memory-leak-_get_peer_alt_names.patch
 
+# fix for subprocess.Popen.communicate() being broken by SIGCHLD handler
+# http://bugs.python.org/issue9127
+# rhbz#1065537
+Patch173: python-2.6.6-fix-subprocess-Popen-communicate-broken-by-SIGCHLD.patch
+
+# fix for iteration over files vith very long lines
+# http://bugs.python.org/issue22526
+# rhbz#794632
+Patch174: python-2.6.6-fix-file-iteration-long-lines.patch
+
+# make multiprocessing ignore EINTR
+# http://bugs.python.org/issue17097
+# rhbz#1180864
+Patch175: python-2.6.6-multiprocessing-ignore-eintr.patch 
+
+# add choices for sort option of cProfile for better output message
+# http://bugs.python.org/issue23420
+# rhbz#1160640
+Patch176: python-2.6.6-cprofile-sort-option.patch
+
+# make Popen.communicate catch EINTR error
+# http://bugs.python.org/issue12493
+# rhbz#1073165
+Patch177: python-2.6.6-communicate-handle-eintr.patch
+
+# let ConfigParser handle options without values
+# rhbz#1031709
+Patch178: python-2.6.6-have-ConfigParser-handle-options-without-values.patch
+
+# 2.6 unittest doesnt have unittest.skip so sometimes the test is simply deleted
+#########################
+# MOCK FAILURES
+#########################
+# test_distutils:
+#   test_get_outputs - ld can't find lpython2.6 - deleted
+#   test_home_installation - recognize platform lib dir - fixed
+# test_file:
+#   testStdin -  seeks sys.stdin but doesn't work as expected in mock/brew - deleted
+# test_socket
+#   testSockName - gethostname doesn't work in mock/brew - skip
+# test_subprocess
+#   test_wait_when_sigchild_ignored - added optional subdir arg into test_support.py.findfile
+##########################
+# BREW SPECIFIC FAILURES
+##########################
+# test_socket, test_ftplib, test_asynchat, test_asyncore, test_httplib, test_poplib
+#   multiple failures in brew because of missing socket.SO_REUSEPORT see rhbz#913732
+# test_subprocess
+#   test_leaking_fds_on_error failed because of the dir permissions in brew - fixed
+# test_distutils:test_install
+#   test_home_installation_scheme failed because of multilib support - fixed
+Patch179: python-2.6.6-fix-and-skip-tests.patch
+
+# Fix logging module error when multiprocessing module is not initialized
+# http://bugs.python.org/issue8200
+# https://bugzilla.redhat.com/show_bug.cgi?id=1204966
+Patch180: python-2.6.6-fix-logging-module-init-when-multiprocessing-not-initialized.patch
+
+# Fixes for CVE-2014-7185/4650/1912 CVE-2013-1752
+# rhbz#1206572
+Patch181: CVE-2014-7185.patch
+Patch182: CVE-2014-4650.patch
+Patch183: CVE-2014-1912.patch 
+Patch184: CVE-2013-1752.patch
+
+# enable-deepcopy-with-instance-methods.patch
+# Python Issue #1515
+# Resolves: rhbz#1223037
+Patch185: enable-deepcopy-with-instance-methods.patch
 
 # The core python package contains just the executable and manpages; most of
 # the content is now in the -libs subpackage.
@@ -537,6 +610,8 @@ Provides: %{python}-libs-%{_arch} = %{version}-%{release}
 # randomization was added (in python-libs-2.6.6-30.el6) so we provide this
 # in case any other packages need to use this API extension:
 Provides: _Py_HashSecret%{?_isa}
+Obsoletes: python-ordereddict <= 1.1
+Provides: python-ordereddict = 1.2
 
 %description libs
 This package contains runtime libraries for use by Python:
@@ -790,6 +865,32 @@ mv Modules/cryptmodule.c Modules/_cryptmodule.c
 
 %patch172 -p1
 
+%patch173 -p1
+
+%patch174 -p1
+
+%patch175 -p1
+
+%patch176 -p1
+
+%patch177 -p1
+
+%patch178 -p1
+
+%patch179 -p1
+
+%patch180 -p1
+
+%patch181 -p1
+
+%patch182 -p1
+
+%patch183 -p1
+
+%patch184 -p1
+
+%patch185 -p1
+
 # Don't build these crypto algorithms; instead rely on _hashlib and OpenSSL:
 for f in md5module.c md5.c shamodule.c sha256module.c sha512module.c; do
     rm Modules/$f
@@ -851,6 +952,10 @@ mkdir -p $RPM_BUILD_ROOT/usr $RPM_BUILD_ROOT%{_mandir}
 for f in distutils/command/install distutils/sysconfig; do
     rm -f Lib/$f.py.lib64
 done
+
+# create dummy ordereddict file which contains import for OrderedDict
+touch Lib/ordereddict.py
+echo 'from collections import OrderedDict' > Lib/ordereddict.py
 
 make install DESTDIR=$RPM_BUILD_ROOT
 # Fix the interpreter path in binaries installed by distutils 
@@ -1041,6 +1146,8 @@ sed \
 
 %endif # with_systemtap
 
+cp %{SOURCE8} %{buildroot}%{site_packages}
+
 #                                                                                                   
 # Fix shebangs in files listed in rhbz#521898                                                       
 sed -i "s|^#\! */usr/bin.*$|#\! %{__python}|" \
@@ -1053,6 +1160,21 @@ sed -i "s|^#\! */usr/bin.*$|#\! %{__python}|" \
     %{buildroot}%{site_packages}/pynche/pynche                                                       
 
 sed -i -e '1i#\! %{__python}' %{buildroot}%{demo_dir}/scripts/find-uname.py
+
+
+# ===============================
+# Running the upstream test suite
+# ===============================
+
+%check
+%if 0%{run_selftest_suite}
+echo STARTING: CHECKING OF PYTHON
+EXTRATESTOPTS="--verbose"
+EXCLUDED_TESTS=test_dl  # requires sizeof(int) == sizeof(long) == sizeof(char*)
+WITHIN_PYTHON_RPM_BUILD= EXTRATESTOPTS="$EXTRATESTOPTS -x $EXCLUDED_TESTS" make test
+echo FINISHED: CHECKING OF PYTHON
+%endif
+
 
 %clean
 rm -fr $RPM_BUILD_ROOT
@@ -1150,6 +1272,7 @@ rm -fr $RPM_BUILD_ROOT
 
 %dir %{site_packages}
 %{site_packages}/README
+%{site_packages}/ordereddict-1.2-py2.6.egg-info
 %{pylibdir}/*.py*
 %{pylibdir}/*.doc
 %dir %{pylibdir}/bsddb
@@ -1262,6 +1385,58 @@ rm -fr $RPM_BUILD_ROOT
 # payload file would be unpackaged)
 
 %changelog
+* Fri May 22 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.6.6-64
+- Enable use of deepcopy() with instance methods
+Resolves: rhbz#1223037
+
+* Mon Apr 20 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.6.6-63
+- Since -libs now provide python-ordered dict, added ordereddict
+  dist-info to site-packages
+Resolves: rhbz#1199997
+
+* Tue Mar 31 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.6.6-62
+- Fix CVE-2014-7185/4650/1912 CVE-2013-1752
+Resolves: rhbz#1206572
+
+* Mon Mar 30 2015 Slavek Kabrda <bkabrda@redhat.com> - 2.6.6-61
+- Fix logging module error when multiprocessing module is not initialized
+Resolves: rhbz#1204966
+
+* Tue Mar 10 2015 Robert Kuska <rkuska@redhat.com> - 2.6.6-60
+- Add provides for python-ordereddict
+Resolves: rhbz#1199997
+
+* Tue Feb 10 2015 Robert Kuska <rkuska@redhat.com> - 2.6.6-59
+- Let ConfigParse handle options without values
+- Add check phase to specfile, fix and skip relevant failing tests
+Resolves: rhbz#1031709
+
+* Mon Feb 09 2015 Robert Kuska <rkuska@redhat.com> - 2.6.6-58
+- Make Popen.communicate catch EINTR error
+Resolves: rhbz#1073165
+
+* Mon Feb 09 2015 Robert Kuska <rkuska@redhat.com> - 2.6.6-57
+- Add choices for sort option of cProfile for better output
+Resolves: rhbz#1160640
+
+* Mon Feb 09 2015 Robert Kuska <rkuska@redhat.com> - 2.6.6-56
+- Make multiprocessing ignore EINTR
+Resolves: rhbz#1180864
+
+* Fri Jan 16 2015 Petr Viktorin <pviktori@redhat.com> - 2.6.6-55
+- Fix iteration over files with very long lines
+Resolves: rhbz#794632
+
+* Wed Jan 07 2015 Slavek Kabrda <bkabrda@redhat.com> - 2.6.6-54
+- Fix subprocess.Popen.communicate() being broken by SIGCHLD handler.
+Resolves: rhbz#1065537
+- Rebuild against latest valgrind-devel.
+Resolves: rhbz#1142170
+
+* Fri Nov 22 2013 Bohuslav Kabrda <bkabrda@redhat.com> - 2.6.6-53
+- Bump release up to ensure proper upgrade path.
+Related: rhbz#958256
+
 * Thu Nov 21 2013 Bohuslav Kabrda <bkabrda@redhat.com> - 2.6.6-52
 - Fix multilib dependencies.
 Resolves: rhbz#958256

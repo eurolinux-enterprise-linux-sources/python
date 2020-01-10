@@ -47,7 +47,7 @@
 Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 Version: 2.6.6
-Release: 51%{?dist}
+Release: 52%{?dist}
 License: Python
 Group: Development/Languages
 Provides: python-abi = %{pybasever}
@@ -547,7 +547,8 @@ a scripting language, and by the main "python" executable
 %package devel
 Summary: The libraries and header files needed for Python development
 Group: Development/Libraries
-Requires: %{python}%{?_isa} = %{version}-%{release}
+Requires: %{python} = %{version}-%{release}
+Requires: %{python}-libs%{?_isa} = %{version}-%{release}
 # Needed here because of the migration of Makefile from -devel to the main
 # package
 Conflicts: %{python} < %{version}-%{release}
@@ -1261,6 +1262,10 @@ rm -fr $RPM_BUILD_ROOT
 # payload file would be unpackaged)
 
 %changelog
+* Thu Nov 21 2013 Bohuslav Kabrda <bkabrda@redhat.com> - 2.6.6-52
+- Fix multilib dependencies.
+Resolves: rhbz#958256
+
 * Wed Sep 04 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.6.6-51
 - Fixed memory leak in _ssl._get_peer_alt_names
 Resolves: rhbz#1002983

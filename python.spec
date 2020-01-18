@@ -114,7 +114,7 @@ Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 # Remember to also rebase python-docs when changing this:
 Version: 2.7.5
-Release: 77%{?dist}
+Release: 79%{?dist}
 License: Python
 Group: Development/Languages
 Requires: %{python}-libs%{?_isa} = %{version}-%{release}
@@ -1278,7 +1278,7 @@ Patch306: 00306-fix-oserror-17-upon-semaphores-creation.patch
 
 # 00320 #
 # Security fix for CVE-2019-9636: Information Disclosure due to urlsplit improper NFKC normalization
-# FIXED UPSTREAM: https://bugs.python.org/issue36216
+# FIXED UPSTREAM: https://bugs.python.org/issue36216 and https://bugs.python.org/issue36742
 # Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1689316
 Patch320: 00320-CVE-2019-9636.patch
 
@@ -1396,8 +1396,9 @@ Requires: pkgconfig
 # package
 Conflicts: %{python} < %{version}-%{release}
 %if %{main_python}
-Obsoletes: python2-devel
+Obsoletes: python2-devel < %{version}-%{release}
 Provides: python2-devel = %{version}-%{release}
+Provides: python2-devel%{?_isa} = %{version}-%{release}
 %endif
 
 %description devel
@@ -1417,7 +1418,7 @@ Group: Development/Tools
 Requires: %{name} = %{version}-%{release}
 Requires: %{tkinter} = %{version}-%{release}
 %if %{main_python}
-Obsoletes: python2-tools
+Obsoletes: python2-tools < %{version}-%{release}
 Provides: python2-tools = %{version}
 %endif
 
@@ -1431,7 +1432,7 @@ Summary: A graphical user interface for the Python scripting language
 Group: Development/Languages
 Requires: %{name} = %{version}-%{release}
 %if %{main_python}
-Obsoletes: tkinter2
+Obsoletes: tkinter2 < %{version}-%{release}
 Provides: tkinter2 = %{version}
 %endif
 
@@ -2595,6 +2596,14 @@ rm -fr %{buildroot}
 # ======================================================
 
 %changelog
+* Mon May 20 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-79
+- Updated fix for CVE-2019-9636
+Resolves: rhbz#1711166
+
+* Thu May 09 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-78
+- Remove unversioned obsoletes
+Resolves: rhbz#1708674
+
 * Tue Mar 26 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-77
 - Security fix for CVE-2019-9636
 Resolves: rhbz#1689316

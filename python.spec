@@ -114,7 +114,7 @@ Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 # Remember to also rebase python-docs when changing this:
 Version: 2.7.5
-Release: 79%{?dist}
+Release: 80%{?dist}
 License: Python
 Group: Development/Languages
 Requires: %{python}-libs%{?_isa} = %{version}-%{release}
@@ -1277,10 +1277,11 @@ Patch305: 00305-CVE-2016-2183.patch
 Patch306: 00306-fix-oserror-17-upon-semaphores-creation.patch
 
 # 00320 #
-# Security fix for CVE-2019-9636: Information Disclosure due to urlsplit improper NFKC normalization
+# Security fix for CVE-2019-9636 and CVE-2019-10160: Information Disclosure due to urlsplit improper NFKC normalization
 # FIXED UPSTREAM: https://bugs.python.org/issue36216 and https://bugs.python.org/issue36742
 # Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1689316
-Patch320: 00320-CVE-2019-9636.patch
+# and https://bugzilla.redhat.com/show_bug.cgi?id=1718401
+Patch320: 00320-CVE-2019-9636-and-CVE-2019-10160.patch
 
 # (New patches go here ^^^)
 #
@@ -2596,6 +2597,10 @@ rm -fr %{buildroot}
 # ======================================================
 
 %changelog
+* Tue Jun 11 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-80
+- Security fix for CVE-2019-10160
+Resolves: rhbz#1718401
+
 * Mon May 20 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-79
 - Updated fix for CVE-2019-9636
 Resolves: rhbz#1711166

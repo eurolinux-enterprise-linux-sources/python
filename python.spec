@@ -114,7 +114,7 @@ Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 # Remember to also rebase python-docs when changing this:
 Version: 2.7.5
-Release: 86%{?dist}
+Release: 76%{?dist}
 License: Python
 Group: Development/Languages
 Requires: %{python}-libs%{?_isa} = %{version}-%{release}
@@ -199,6 +199,9 @@ Source4: systemtap-example.stp
 # Written by dmalcolm; not yet sent upstream
 Source5: pyfuntop.stp
 
+# Supply various useful macros for building Python 2 components:
+Source6: macros.python2
+
 Source7: pynche
 
 # Configuration file to change ssl verification settings globally
@@ -207,6 +210,16 @@ Source8: cert-verification.cfg
 
 # configuration for systemd's tmpfiles
 Source9: python.conf
+
+# Supply various useful macros for building Python components:
+# NOTE: The %%python_provide macro is copied directly from Fedora/EPEL, but the
+# %%{python3_pkgversion} and %%{python3_other_pkgversion} macros used within it
+# are missing in RHEL. However, in their absence the lua code will run fine for
+# Python 2 packages and will print an error only if invoked for Python 3
+# packages (unless the python-srpm-macros package from EPEL is installed). That
+# is a desirable behaviour as RHEL without EPEL does not support building
+# Python 3 packages.
+Source10: macros.python
 
 # Modules/Setup.dist is ultimately used by the "makesetup" script to construct
 # the Makefile and config.c
@@ -1263,50 +1276,6 @@ Patch305: 00305-CVE-2016-2183.patch
 # Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1579432
 Patch306: 00306-fix-oserror-17-upon-semaphores-creation.patch
 
-# 00310 #
-# CVE-2018-14647
-# Use XML_SetHashSalt in _elementtree
-# FIXED UPSTREAM: https://bugs.python.org/issue34623
-# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1636838
-Patch310: 00310-use-xml-sethashsalt-in-elementtree.patch
-
-# 00314 #
-# Python can sometimes create incorrect .pyc files: check I/O error.
-# FIXED UPSTREAM: https://bugs.python.org/issue25083
-# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1629982
-Patch314: 00314-parser-check-e_io.patch
-
-# 00317 #
-# CVE-2019-5010 Crash on parsing a specially crafted X509 certificate
-# FIXED UPSTREAM: https://bugs.python.org/issue35746
-# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1666788
-Patch317: 00317-CVE-2019-5010-ssl-crl.patch
-
-# 00320 #
-# Security fix for CVE-2019-9636 and CVE-2019-10160: Information Disclosure due to urlsplit improper NFKC normalization
-# FIXED UPSTREAM: https://bugs.python.org/issue36216 and https://bugs.python.org/issue36742
-# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1689317
-# and https://bugzilla.redhat.com/show_bug.cgi?id=1718388
-Patch320: 00320-CVE-2019-9636-and-CVE-2019-10160.patch
-
-# 00324 #
-# Disallow control chars in http URLs
-# Security fix for CVE-2019-9740 and CVE-2019-9947
-# Fixed upstream: https://bugs.python.org/issue30458
-# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1704362
-# and https://bugzilla.redhat.com/show_bug.cgi?id=1703530
-# Also backport https://bugs.python.org/issue30500 as the urllib2
-# tests rely on that, and include the test_splithost case added in
-# https://github.com/python/cpython/commit/f0b630b826949e51f429418e6675fb6a8a131f3c
-Patch324: 00324-disallow-control-chars-in-http-urls.patch
-
-# 00325 #
-# Unnecessary URL scheme exists to allow local_file:// reading file  in urllib
-# Security fix for CVE-2019-9948
-# Fixed upstream: https://bugs.python.org/issue35907
-# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1704174
-Patch325: 00325-CVE-2019-9948.patch
-
 # (New patches go here ^^^)
 #
 # When adding new patches to "python" and "python3" in Fedora 17 onwards,
@@ -1417,18 +1386,12 @@ Summary: The libraries and header files needed for Python development
 Group: Development/Libraries
 Requires: %{python}%{?_isa} = %{version}-%{release}
 Requires: pkgconfig
-
-# Macros were previously here, but were moved to their respective packages
-Requires: python-rpm-macros > 3-30
-Requires: python2-rpm-macros > 3-30
-
 # Needed here because of the migration of Makefile from -devel to the main
 # package
 Conflicts: %{python} < %{version}-%{release}
 %if %{main_python}
-Obsoletes: python2-devel < %{version}-%{release}
+Obsoletes: python2-devel
 Provides: python2-devel = %{version}-%{release}
-Provides: python2-devel%{?_isa} = %{version}-%{release}
 %endif
 
 %description devel
@@ -1448,7 +1411,7 @@ Group: Development/Tools
 Requires: %{name} = %{version}-%{release}
 Requires: %{tkinter} = %{version}-%{release}
 %if %{main_python}
-Obsoletes: python2-tools < %{version}-%{release}
+Obsoletes: python2-tools
 Provides: python2-tools = %{version}
 %endif
 
@@ -1462,7 +1425,7 @@ Summary: A graphical user interface for the Python scripting language
 Group: Development/Languages
 Requires: %{name} = %{version}-%{release}
 %if %{main_python}
-Obsoletes: tkinter2 < %{version}-%{release}
+Obsoletes: tkinter2
 Provides: tkinter2 = %{version}
 %endif
 
@@ -1745,12 +1708,6 @@ mv Modules/cryptmodule.c Modules/_cryptmodule.c
 %patch303 -p1
 %patch305 -p1
 %patch306 -p1
-%patch310 -p1
-%patch314 -p1
-%patch317 -p1
-%patch320 -p1
-%patch324 -p1
-%patch325 -p1
 
 
 # This shouldn't be necesarry, but is right now (2.2a3)
@@ -2117,6 +2074,11 @@ sed -i -e "s/'pyconfig.h'/'%{_pyconfig_h}'/" \
   %{buildroot}%{pylibdir}/distutils/sysconfig.py \
   %{buildroot}%{pylibdir}/sysconfig.py
 
+# Install macros for rpm:
+mkdir -p %{buildroot}/%{_sysconfdir}/rpm
+install -m 644 %{SOURCE6} %{buildroot}/%{_sysconfdir}/rpm
+install -m 644 %{SOURCE10} %{buildroot}/%{_sysconfdir}/rpm
+
 # Make python folder for config files under /etc
 mkdir -p %{buildroot}/%{_sysconfdir}/python
 install -m 644 %{SOURCE8} %{buildroot}/%{_sysconfdir}/python
@@ -2444,6 +2406,8 @@ rm -fr %{buildroot}
 %endif
 %{_bindir}/python%{pybasever}-config
 %{_libdir}/libpython%{pybasever}.so
+%{_sysconfdir}/rpm/macros.python
+%{_sysconfdir}/rpm/macros.python2
 
 %files tools
 %defattr(-,root,root,755)
@@ -2624,47 +2588,6 @@ rm -fr %{buildroot}
 # ======================================================
 
 %changelog
-* Tue Jun 11 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-86
-- Security fix for CVE-2019-10160
-Resolves: rhbz#1718388
-
-* Tue May 28 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-85
-- Security fix for CVE-2019-9948
-Resolves: rhbz#1704174
-
-* Wed May 15 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-84
-- Disallow control chars in http URLs
-- Fixes CVE-2019-9740 and CVE-2019-9947
-Resolves: rhbz#1704362 and rhbz#1703530
-
-* Thu May 09 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-83
-- Remove unversioned obsoletes
-Resolves: rhbz#1703600
-
-* Fri May 03 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-82
-- Updated fix for CVE-2019-9636
-Resolves: rhbz#1689317
-
-* Tue Mar 26 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-81
-- Security fix for CVE-2019-9636
-Resolves: rhbz#1689317
-
-* Wed Mar 20 2019 Victor Stinner <vstinner@redhat.com> - 2.7.5-80
-- Security fix for CVE-2019-5010: crash on parsing a specially crafted X509 certificate
-  (resolves: rhbz#1666788)
-
-* Wed Mar 06 2019 Tomas Orsava <torsava@redhat.com> - 2.7.5-79
-- Moved the macros.python/2 files into their own packages python/2-rpm-macros
-Resolves: rhbz#1679221
-
-* Mon Feb 25 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-78
-- Security fix for CVE-2018-14647
-Resolves: rhbz#1636838
-
-* Tue Nov 06 2018 Victor Stinner <vstinner@redhat.com> - 2.7.5-77
-- Python can sometimes create incorrect .pyc files: check I/O error
-  (rhbz#1629982).
-
 * Mon Sep 10 2018 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-76
 - Remove an unversioned obsoletes tag
 Resolves: rhbz#1627059

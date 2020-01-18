@@ -114,7 +114,7 @@ Summary: An interpreted, interactive, object-oriented programming language
 Name: %{python}
 # Remember to also rebase python-docs when changing this:
 Version: 2.7.5
-Release: 76%{?dist}
+Release: 77%{?dist}
 License: Python
 Group: Development/Languages
 Requires: %{python}-libs%{?_isa} = %{version}-%{release}
@@ -1276,6 +1276,12 @@ Patch305: 00305-CVE-2016-2183.patch
 # Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1579432
 Patch306: 00306-fix-oserror-17-upon-semaphores-creation.patch
 
+# 00320 #
+# Security fix for CVE-2019-9636: Information Disclosure due to urlsplit improper NFKC normalization
+# FIXED UPSTREAM: https://bugs.python.org/issue36216
+# Resolves: https://bugzilla.redhat.com/show_bug.cgi?id=1689316
+Patch320: 00320-CVE-2019-9636.patch
+
 # (New patches go here ^^^)
 #
 # When adding new patches to "python" and "python3" in Fedora 17 onwards,
@@ -1708,6 +1714,7 @@ mv Modules/cryptmodule.c Modules/_cryptmodule.c
 %patch303 -p1
 %patch305 -p1
 %patch306 -p1
+%patch320 -p1
 
 
 # This shouldn't be necesarry, but is right now (2.2a3)
@@ -2588,6 +2595,10 @@ rm -fr %{buildroot}
 # ======================================================
 
 %changelog
+* Tue Mar 26 2019 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-77
+- Security fix for CVE-2019-9636
+Resolves: rhbz#1689316
+
 * Mon Sep 10 2018 Charalampos Stratakis <cstratak@redhat.com> - 2.7.5-76
 - Remove an unversioned obsoletes tag
 Resolves: rhbz#1627059
